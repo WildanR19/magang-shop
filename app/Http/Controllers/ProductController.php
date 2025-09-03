@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -98,7 +99,7 @@ class ProductController extends Controller
     {
         $product->delete();
         if ($product->image) {
-            \Storage::disk('public')->delete($product->image);
+            Storage::disk('public')->delete($product->image);
         }
         return back();
     }
