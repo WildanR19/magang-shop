@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Cart extends Model
+class ProductReview extends Model
 {
-    protected $fillable = ['user_id', 'product_id', 'quantity'];
+    use SoftDeletes, HasFactory;
+    protected $fillable = ['product_id', 'user_id', 'rating', 'review'];
 
     public function product()
     {

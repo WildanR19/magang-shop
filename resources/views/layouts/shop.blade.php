@@ -20,13 +20,13 @@
         rel="stylesheet">
 
     <!-- Vendor CSS Files -->
-    @vite(['resources/sass/app.scss', 'resources/js/app.js'])
     <link href="{{ asset('assets/vendor/bootstrap-icons/bootstrap-icons.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/vendor/swiper/swiper-bundle.min.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/vendor/aos/aos.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/vendor/glightbox/css/glightbox.min.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/vendor/drift-zoom/drift-basic.css') }}" rel="stylesheet">
 
+    @vite(['resources/sass/app.scss', 'resources/js/app.js'])
     <!-- Main CSS File -->
     <link href="{{ asset('assets/css/main.css') }}" rel="stylesheet">
 
@@ -42,7 +42,20 @@
 <body class="index-page">
     @include('layouts.partials.header')
     <main class="main">
-
+        <!-- Page Title -->
+        @if (View::getSection('title') !== 'Home' && View::hasSection('title'))
+            <div class="page-title light-background">
+                <div class="container d-lg-flex justify-content-between align-items-center">
+                    <h1 class="mb-2 mb-lg-0">@yield('title')</h1>
+                    <nav class="breadcrumbs">
+                        <ol>
+                            <li><a href="{{ route('home') }}">Home</a></li>
+                            <li class="current">@yield('title')</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div><!-- End Page Title -->
+        @endif
         @yield('content')
     </main>
 
@@ -55,7 +68,6 @@
     <div id="preloader"></div>
 
     <!-- Vendor JS Files -->
-    <script src="{{ asset('assets/vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('assets/vendor/php-email-form/validate.js') }}"></script>
     <script src="{{ asset('assets/vendor/swiper/swiper-bundle.min.js') }}"></script>
     <script src="{{ asset('assets/vendor/aos/aos.js') }}"></script>

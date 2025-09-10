@@ -2,6 +2,12 @@
 
 @section('content')
 
+@session('success')
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endsession
     <!-- Hero Section -->
     <section id="hero" class="hero section">
 
@@ -198,7 +204,7 @@
                                 <div class="product-category">{{ $product->category?->name }}</div>
                                 <h4 class="product-name"><a href="product-details.html">{{ $product->name }}</a>
                                 </h4>
-                                <div class="product-price">Rp. {{ $product->price }}</div>
+                                <div class="product-price">@currency($product->price)</div>
                             </div>
                         </div>
                     </div>

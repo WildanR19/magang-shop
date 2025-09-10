@@ -75,44 +75,59 @@
                         </button>
                         <div class="dropdown-menu">
                             <div class="dropdown-header">
-                                <h6>Welcome to <span class="sitename">FashionStore</span></h6>
+                                <h6>Welcome <span class="sitename">{{ auth()->user()->name ?? 'back' }}</span></h6>
                                 <p class="mb-0">Access account &amp; manage orders</p>
                             </div>
-                            <div class="dropdown-body">
-                                <a class="dropdown-item d-flex align-items-center" href="account.html">
-                                    <i class="bi bi-person-circle me-2"></i>
-                                    <span>My Profile</span>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="account.html">
-                                    <i class="bi bi-bag-check me-2"></i>
-                                    <span>My Orders</span>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="account.html">
-                                    <i class="bi bi-heart me-2"></i>
-                                    <span>My Wishlist</span>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="account.html">
-                                    <i class="bi bi-gear me-2"></i>
-                                    <span>Settings</span>
-                                </a>
-                            </div>
+                            @if (auth()->check())
+                                <div class="dropdown-body">
+                                    <a class="dropdown-item d-flex align-items-center" href="{{ route('account') }}">
+                                        <i class="bi bi-person-circle me-2"></i>
+                                        <span>My Profile</span>
+                                    </a>
+                                    <a class="dropdown-item d-flex align-items-center" href="{{ route('account') }}">
+                                        <i class="bi bi-bag-check me-2"></i>
+                                        <span>My Orders</span>
+                                    </a>
+                                    <a class="dropdown-item d-flex align-items-center" href="{{ route('account') }}">
+                                        <i class="bi bi-heart me-2"></i>
+                                        <span>My Wishlist</span>
+                                    </a>
+                                    <a class="dropdown-item d-flex align-items-center" href="{{ route('account') }}">
+                                        <i class="bi bi-gear me-2"></i>
+                                        <span>Settings</span>
+                                    </a>
+                                </div>
+                            @endif
                             <div class="dropdown-footer">
-                                <a href="register.html" class="btn btn-primary w-100 mb-2">Sign In</a>
-                                <a href="login.html" class="btn btn-outline-primary w-100">Register</a>
+                                @if (auth()->check())
+                                    <a href="{{ route('logout') }}" class="btn btn-primary w-100 mb-2"
+                                    onclick="event.preventDefault();
+                                                                             document.getElementById('logout-form').submit();">
+                                    <i class="bi bi-box-arrow-right"></i>
+                                    <span>Log Out</span>
+                                </a>
+                                <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                                    @csrf
+                                </form>
+                                @else
+                                <a href="{{ route('user.login') }}" class="btn btn-primary w-100 mb-2">Sign In</a>
+                                <a href="{{ route('user.register') }}"
+                                    class="btn btn-outline-primary w-100">Register</a>
+                                @endif
                             </div>
                         </div>
                     </div>
 
                     <!-- Wishlist -->
-                    <a href="account.html" class="header-action-btn d-none d-md-block">
+                    <a href="{{ route('account') }}" class="header-action-btn d-none d-md-block">
                         <i class="bi bi-heart"></i>
-                        <span class="badge">0</span>
+                        <span class="badge">{{ auth()->user() ? App\Models\Wishlist::where('user_id', auth()->user()->id)->count() : 0 }}</span>
                     </a>
 
                     <!-- Cart -->
-                    <a href="cart.html" class="header-action-btn">
+                    <a href="{{ route('cart') }}" class="header-action-btn">
                         <i class="bi bi-cart3"></i>
-                        <span class="badge">3</span>
+                        <span class="badge">{{ auth()->user() ? App\Models\Cart::where('user_id', auth()->user()->id)->count() : 0 }}</span>
                     </a>
 
                     <!-- Mobile Navigation Toggle -->
@@ -130,9 +145,8 @@
                 <ul>
                     <li><a href="{{ route('home') }}" class="active">Home</a></li>
                     <li><a href="{{ route('category') }}">Category</a></li>
-                    <li><a href="cart.html">Cart</a></li>
-                    <li><a href="checkout.html">Checkout</a></li>
-                    <li><a href="about.html">About</a></li>
+                    <li><a href="{{ route('checkout') }}">Checkout</a></li>
+                    <li><a href="{{ route('about') }}">About</a></li>
                 </ul>
             </nav>
         </div>

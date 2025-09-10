@@ -2,9 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cart;
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Models\Shipment;
+use App\Models\User;
+use App\Models\Wishlist;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
 class HomeController extends Controller
 {
@@ -83,8 +92,204 @@ class HomeController extends Controller
             $query->where('category_id', $category);
         }
         $products = $query->with(['category'])
+                        ->withAvg('reviews as ratings', 'rating')
+                        ->withCount('reviews')
                         ->paginate($per_page);
         $categories = ProductCategory::all();
+
         return view('category', compact('products', 'categories'));
+    }
+
+    public function productDetail($id)
+    {
+        $product = Product::with('category')
+        ->withCount([
+            'reviews',
+            'reviews as five_stars' => function ($query) {
+                $query->where('rating', 5);
+            },
+            'reviews as four_stars' => function ($query) {
+                $query->where('rating', 4);
+            },
+            'reviews as three_stars' => function ($query) {
+                $query->where('rating', 3);
+            },
+            'reviews as two_stars' => function ($query) {
+                $query->where('rating', 2);
+            },
+            'reviews as one_stars' => function ($query) {
+                $query->where('rating', 1);
+            },
+        ])
+        ->withAvg('reviews as ratings', 'rating')
+        ->findOrFail($id);
+
+        $reviews = $product->reviews()->with(['user'])->latest()->cursorPaginate(5);
+        
+        return view('product-detail', compact('product', 'reviews'));
+    }
+
+    public function cart()
+    {
+        $cartItems = Cart::where('user_id', auth()->id())->with('product')->get();
+        return view('cart', compact('cartItems'));
+    }
+
+    public function checkout()
+    {
+        $products = Cart::where('user_id', auth()->id())->with('product')->get();
+        return view('checkout', compact('products'));
+    }
+
+    public function account()
+    {
+        $user = User::with(['wishlists', 'orders', 'reviews'])->findOrFail(auth()->id());
+        return view('account', compact('user'));
+    }
+
+    public function login(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+            'password' => 'required|string|min:6',
+        ]);
+
+        if (auth()->attempt($request->only('email', 'password'))) {
+            return redirect()->route('home');
+        }
+
+        return back();
+    }
+
+    public function register(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        $user = User::create([
+            'name' => $request->input('name'),
+            'email' => $request->input('email'),
+            'password' => Hash::make($request->input('password')),
+        ]);
+
+        auth()->login($user);
+
+        return redirect()->route('home');
+    }
+
+    public function addToCart($id)
+    {
+        $cartItem = Cart::where('user_id', auth()->id())
+            ->where('product_id', $id)
+            ->first();
+
+        if ($cartItem) {
+            $cartItem->increment('quantity');
+        } else {
+            Cart::create([
+                'user_id' => auth()->id(),
+                'product_id' => $id,
+                'quantity' => 1,
+            ]);
+        
+        }
+
+        return redirect()->back()->with('success', 'Product added to cart!');
+    }
+
+    public function decrementCart($id)
+    {
+        $cartItem = Cart::where('user_id', auth()->id())
+            ->where('product_id', $id)
+            ->first();
+
+        if ($cartItem) {
+            if ($cartItem->quantity > 1) {
+                $cartItem->decrement('quantity');
+            } else {
+                $cartItem->delete();
+            }
+        }
+
+        return redirect()->back()->with('success', 'Cart updated!');
+    }
+    
+    public function incrementCart($id)
+    {
+        $cartItem = Cart::where('user_id', auth()->id())
+            ->where('product_id', $id)
+            ->first();
+
+        if ($cartItem) {
+            
+            $cartItem->increment('quantity');
+            
+        }
+
+        return redirect()->back()->with('success', 'Cart updated!');
+    }
+
+    public function processCheckout(Request $request)
+    {
+        $request->validate([
+            'address_id' => 'required',
+            'payment_method' => 'required|string',
+        ]);
+
+        $cartItems = Cart::where('user_id', auth()->id())->with('product')->get();
+
+        DB::beginTransaction();
+            try {
+                $shipment = Shipment::create([
+                'user_id' => auth()->id(),
+                'address_id' => $request->input('address_id'),
+                'shipment_date' => now()
+            ]);
+
+            $total_price = $cartItems->sum(fn($item) => $item->product->price * $item->quantity);
+            $payment = Payment::create([
+                'user_id' => auth()->id(),
+                'amount' => $total_price,
+                'payment_method' => $request->input('payment_method'),
+                'payment_date' => now(),
+            ]);
+
+            $order = Order::create([
+                'user_id' => auth()->id(),
+                'shipment_id' => $shipment->id,
+                'payment_id' => $payment->id,
+                'order_date' => now(),
+                'total_price' => $total_price
+            ]);
+
+            foreach ($cartItems as $item) {
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $item->product_id,
+                    'quantity' => $item->quantity,
+                    'price' => $item->product->price,
+                ]);
+            }
+
+            Cart::where('user_id', auth()->id())->delete();
+            DB::commit();
+            return redirect()->route('home')->with('success', 'Checkout successful!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function addToWishlist($id)
+    {
+        Wishlist::create([
+            'user_id' => auth()->id(),
+            'product_id' => $id,
+        ]);
+
+        return redirect()->back()->with('success', 'Product added to wishlist!');
     }
 }
