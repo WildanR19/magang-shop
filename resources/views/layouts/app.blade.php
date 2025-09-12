@@ -42,6 +42,10 @@
                                 href="{{ route('product-categories.index') }}">{{ __('Product Categories') }}</a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link"
+                                href="{{ route('product-stock.index') }}">{{ __('Product Stock') }}</a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="{{ route('users.index') }}">{{ __('Users') }}</a>
                         </li>
                     </ul>

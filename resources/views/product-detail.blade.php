@@ -3,6 +3,12 @@
 @section('title', 'Product Details')
 @section('content')
 
+@session('success')
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endsession
     <!-- Product Details Section -->
     <section id="product-details" class="product-details section">
 
@@ -67,37 +73,44 @@
                             <div class="quantity-left">Only {{ $product->stock }} items remaining</div>
                         </div>
 
+                        <form action="{{ route('buy.now', $product->id) }}" method="POST" id="buy-now-form" style="display: none;">
+                            @csrf
+                             <input id="quantity_buy_now" type="number" name="quantity" class="quantity-input" value="1" min="1" max="{{ $product->stock }}">
+                        </form>
                         <!-- Purchase Options -->
-                        <div class="purchase-section">
-                            <div class="quantity-control">
-                                <label class="control-label">Quantity:</label>
-                                <div class="quantity-input-group">
-                                    <div class="quantity-selector">
-                                        <button class="quantity-btn decrease" type="button">
-                                            <i class="bi bi-dash"></i>
-                                        </button>
-                                        <input type="number" class="quantity-input" value="1" min="1" max="{{ $product->stock }}">
-                                        <button class="quantity-btn increase" type="button">
-                                            <i class="bi bi-plus"></i>
-                                        </button>
+                        <form method="POST" action="{{  route('cart.addMultiple', $product->id)  }}">
+                            @csrf
+                            <div class="purchase-section">
+                                <div class="quantity-control">
+                                    <label class="control-label">Quantity:</label>
+                                    <div class="quantity-input-group">
+                                        <div class="quantity-selector">
+                                            <button class="quantity-btn decrease" type="button">
+                                                <i class="bi bi-dash"></i>
+                                            </button>
+                                            <input id="quantity_cart" type="number" name="quantity" class="quantity-input" value="1" min="1" max="{{ $product->stock }}">
+                                            <button class="quantity-btn increase" type="button">
+                                                <i class="bi bi-plus"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div class="action-buttons">
-                                <button class="btn primary-action">
-                                    <i class="bi bi-bag-plus"></i>
-                                    Add to Cart
-                                </button>
-                                <button class="btn secondary-action">
-                                    <i class="bi bi-lightning"></i>
-                                    Buy Now
-                                </button>
-                                <button class="btn icon-action" title="Add to Wishlist">
-                                    <i class="bi bi-heart"></i>
-                                </button>
+                                <div class="action-buttons">
+                                    <button class="btn primary-action" type="submit" @if ($product->stock < 1) disabled @endif>
+                                        <i class="bi bi-bag-plus"></i>
+                                        Add to Cart
+                                    </button>
+                                    <button class="btn secondary-action" type="submit" form="buy-now-form" @if ($product->stock < 1) disabled @endif>
+                                        <i class="bi bi-lightning"></i>
+                                        Buy Now
+                                    </button>
+                                    <a href="{{ route('wishlist.add', $product->id) }}" class="btn icon-action" title="Add to Wishlist" type="button">
+                                        <i class="bi bi-heart"></i>
+                                    </a>
+                                </div>
                             </div>
-                        </div>
+                        </form>
 
                         <!-- Benefits List -->
                         <div class="benefits-list">
@@ -323,35 +336,35 @@
                                                 <div class="rating-row">
                                                     <span class="stars-label">5★</span>
                                                     <div class="progress-container">
-                                                        <div class="progress-fill" style="width: {{ $product->five_stars / $product->reviews_count * 100}}%;"></div>
+                                                        <div class="progress-fill" style="width: {{ $product->five_stars ? $product->five_stars / $product->reviews_count * 100 : 0 }}%;"></div>
                                                     </div>
                                                     <span class="count-label">{{ $product->five_stars }}</span>
                                                 </div>
                                                 <div class="rating-row">
                                                     <span class="stars-label">4★</span>
                                                     <div class="progress-container">
-                                                        <div class="progress-fill" style="width: {{ $product->four_stars / $product->reviews_count * 100}}%;"></div>
+                                                        <div class="progress-fill" style="width: {{ $product->four_stars ? $product->four_stars / $product->reviews_count * 100 : 0 }}%;"></div>
                                                     </div>
                                                     <span class="count-label">{{ $product->four_stars }}</span>
                                                 </div>
                                                 <div class="rating-row">
                                                     <span class="stars-label">3★</span>
                                                     <div class="progress-container">
-                                                        <div class="progress-fill" style="width: {{ $product->three_stars / $product->reviews_count * 100}}%;"></div>
+                                                        <div class="progress-fill" style="width: {{ $product->three_stars ? $product->three_stars / $product->reviews_count * 100 : 0 }}%;"></div>
                                                     </div>
                                                     <span class="count-label">{{ $product->three_stars }}</span>
                                                 </div>
                                                 <div class="rating-row">
                                                     <span class="stars-label">2★</span>
                                                     <div class="progress-container">
-                                                        <div class="progress-fill" style="width: {{ $product->two_stars / $product->reviews_count * 100}}%;"></div>
+                                                        <div class="progress-fill" style="width: {{ $product->two_stars ? $product->two_stars / $product->reviews_count * 100 : 0 }}%;"></div>
                                                     </div>
                                                     <span class="count-label">{{ $product->two_stars }}</span>
                                                 </div>
                                                 <div class="rating-row">
                                                     <span class="stars-label">1★</span>
                                                     <div class="progress-container">
-                                                        <div class="progress-fill" style="width: {{ $product->one_stars / $product->reviews_count * 100}}%;"></div>
+                                                        <div class="progress-fill" style="width: {{ $product->one_stars ? $product->one_stars / $product->reviews_count * 100 : 0 }}%;"></div>
                                                     </div>
                                                     <span class="count-label">{{ $product->one_stars }}</span>
                                                 </div>
@@ -365,41 +378,14 @@
                                         </div>
                                     </div>
 
-                                    <div class="customer-reviews-list" id="review-list">
-                                        @foreach ($reviews as $review)
-                                            <div class="review-card">
-                                                <div class="reviewer-profile">
-                                                    <img src="assets/img/person/person-f-3.webp" alt="Customer"
-                                                        class="profile-pic">
-                                                    <div class="profile-details">
-                                                        <div class="customer-name">{{ $review->user->name }}</div>
-                                                        <div class="review-meta">
-                                                            <div class="review-stars">
-                                                                <i class="bi bi-star-fill"></i>
-                                                                <i class="bi bi-star-fill"></i>
-                                                                <i class="bi bi-star-fill"></i>
-                                                                <i class="bi bi-star-fill"></i>
-                                                                <i class="bi bi-star-fill"></i>
-                                                            </div>
-                                                            <span class="review-date">{{ $review->created_at }}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="review-text">
-                                                    <p>{{ $review->review }}</p>
-                                                </div>
-                                                <div class="review-actions">
-                                                    <button class="action-btn"><i class="bi bi-hand-thumbs-up"></i> Helpful
-                                                        (12)</button>
-                                                    <button class="action-btn"><i class="bi bi-chat-dots"></i> Reply</button>
-                                                </div>
-                                            </div>
-                                        @endforeach
-                                        @if($reviews->hasMorePages())
-                                            <div class="load-more-section" id="load-more" data-next="{{ $reviews->nextCursor()?->encode() }}">
-                                                <button class="btn load-more-reviews">Show More Reviews</button>
-                                            </div>
-                                        @endif
+                                    <div class="customer-reviews-list">
+                                        <div id="reviews-list">
+                                            @include('product-reviews', ['reviews' => $reviews])
+                                        </div>
+                                        
+                                        <div class="load-more-section">
+                                            <button id="load-more" class="btn load-more-reviews" data-next-cursor="{{ optional($reviews->nextCursor())->encode() }}" @if (! $reviews->hasMorePages()) hidden @endif>Show More Reviews</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -410,4 +396,61 @@
 
         </div>
     </section><!-- /Product Details Section -->
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const btn = document.getElementById('load-more');
+            const list = document.getElementById('reviews-list');
+            if (!btn) return;
+
+            btn.addEventListener('click', async () => {
+                const cursor = btn.dataset.nextCursor;
+                if (!cursor) { btn.hidden = true; return; }
+
+                btn.disabled = true; const oldText = btn.textContent; btn.textContent = 'Loading...';
+
+                try {
+                    const url = `{{ route('product.reviews', $product) }}?cursor=${encodeURIComponent(cursor)}`;
+                    const res = await fetch(url, { headers: { 'Accept': 'application/json' }});
+                    const data = await res.json();
+
+                    list.insertAdjacentHTML('beforeend', data.html);
+
+                    if (data.next_cursor) {
+                        btn.dataset.nextCursor = data.next_cursor;
+                        btn.disabled = false; btn.textContent = oldText;
+                    } else {
+                        btn.hidden = true;
+                    }
+                } catch (e) {
+                    btn.disabled = false; btn.textContent = oldText;
+                    alert('Gagal memuat data.');
+                }
+            });
+
+            const quantityInput = document.getElementById('quantity_cart');
+            const quantityBuyNow = document.getElementById('quantity_buy_now');
+            const increaseBtn = document.querySelector('.quantity-btn.increase');
+            const decreaseBtn = document.querySelector('.quantity-btn.decrease');
+            increaseBtn.addEventListener('click', () => {
+                let value = parseInt(quantityInput.value) || 1;
+                quantityBuyNow.value = value;
+                console.log(value);
+            });
+            decreaseBtn.addEventListener('click', () => {
+                let value = parseInt(quantityInput.value) || 1;
+                quantityBuyNow.value = value;
+            });
+            quantityInput.addEventListener('input', () => {
+                let value = parseInt(quantityInput.value);
+                if (isNaN(value) || value < 1) value = 1;
+                if (value > {{ $product->stock }}) value = {{ $product->stock }};
+                quantityInput.value = value;
+                quantityBuyNow.value = value;
+                console.log(value);
+            });
+        });
+
+</script>
 @endsection

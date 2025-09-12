@@ -3,6 +3,12 @@
 @section('title', 'Cart')
 @section('content')
 
+@session('success')
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endsession
     <!-- Cart Section -->
     <section id="cart" class="cart section">
 
@@ -46,9 +52,9 @@
                                             <div class="product-meta">
                                                 <span class="product-color">{{ $cart->product?->description }}</span>
                                             </div>
-                                            <button class="remove-item" type="button">
+                                            <a href="{{  route('cart.remove', $cart->product?->id) }}" class="remove-item" type="button">
                                                 <i class="bi bi-trash"></i> Remove
-                                            </button>
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
@@ -98,9 +104,9 @@
                                     <button class="btn btn-outline-heading me-2">
                                         <i class="bi bi-arrow-clockwise"></i> Update Cart
                                     </button>
-                                    <button class="btn btn-outline-remove">
+                                    <a href="{{ route('cart.clear') }}" class="btn btn-outline-remove">
                                         <i class="bi bi-trash"></i> Clear Cart
-                                    </button>
+                                    </a>
                                 </div>
                             </div>
                         </div>

@@ -124,9 +124,23 @@ class HomeController extends Controller
         ->withAvg('reviews as ratings', 'rating')
         ->findOrFail($id);
 
-        $reviews = $product->reviews()->with(['user'])->latest()->cursorPaginate(5);
+        $reviews = $product->reviews()->with(['user'])->orderByDesc('id')->cursorPaginate(3);
         
         return view('product-detail', compact('product', 'reviews'));
+    }
+
+    public function showMoreReviews(Product $product)
+    {
+        $reviews = $product->reviews()->with(['user'])->orderByDesc('id')->cursorPaginate(3);
+
+        $html = view('product-reviews', [
+            'reviews' => $reviews->items(),
+        ])->render();
+
+        return response()->json([
+            'html'        => $html,
+            'next_cursor' => optional($reviews->nextCursor())->encode(),
+        ]);
     }
 
     public function cart()
@@ -199,6 +213,30 @@ class HomeController extends Controller
 
         return redirect()->back()->with('success', 'Product added to cart!');
     }
+    
+    public function addMultipleToCart(Request $request, $id)
+    {
+        $request->validate([
+            'quantity' => 'required|integer|min:1',
+        ]);
+
+        $cartItem = Cart::where('user_id', auth()->id())
+            ->where('product_id', $id)
+            ->first();
+
+        if ($cartItem) {
+            $cartItem->increment('quantity');
+        } else {
+            Cart::create([
+                'user_id' => auth()->id(),
+                'product_id' => $id,
+                'quantity' => $request->input('quantity', 1),
+            ]);
+        
+        }
+
+        return redirect()->back()->with('success', 'Product added to cart!');
+    }
 
     public function decrementCart($id)
     {
@@ -242,8 +280,8 @@ class HomeController extends Controller
         $cartItems = Cart::where('user_id', auth()->id())->with('product')->get();
 
         DB::beginTransaction();
-            try {
-                $shipment = Shipment::create([
+        try {
+            $shipment = Shipment::create([
                 'user_id' => auth()->id(),
                 'address_id' => $request->input('address_id'),
                 'shipment_date' => now()
@@ -272,6 +310,8 @@ class HomeController extends Controller
                     'quantity' => $item->quantity,
                     'price' => $item->product->price,
                 ]);
+
+                Product::where('id', $item->product_id)->decrement('stock', $item->quantity);
             }
 
             Cart::where('user_id', auth()->id())->delete();
@@ -291,5 +331,35 @@ class HomeController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Product added to wishlist!');
+    }
+
+    public function removeFromCart($id)
+    {
+        Cart::where('user_id', auth()->id())
+            ->where('product_id', $id)
+            ->delete();
+
+        return redirect()->back()->with('success', 'Product removed from cart!');
+    }
+
+    public function clearCart()
+    {
+        Cart::where('user_id', auth()->id())->delete();
+
+        return redirect()->back()->with('success', 'Cart cleared!');
+    }
+
+    public function buyNow(Request $request, $id)
+    {
+        Cart::updateOrCreate(
+            [
+                'user_id' => auth()->id(),
+                'product_id' => $id,
+            ],
+            [
+                'quantity' => $request->input('quantity', 1),
+            ]
+        );
+        return redirect()->route('checkout');
     }
 }
